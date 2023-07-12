@@ -37,12 +37,20 @@ func Exists(path string) bool {
 	return true
 }
 
+var currentPath string
+
 func GetCurrentDirectory() string {
+	if currentPath != "" {
+		return currentPath
+	}
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		log.Fatal(err)
 	}
-	return strings.Replace(dir, "\\", "/", -1)
+	log.Println("dir:", dir)
+	currentPath = strings.Replace(dir, "\\", "/", -1)
+	log.Println("currentPath:", dir)
+	return currentPath
 }
 
 func IsRelease() bool {

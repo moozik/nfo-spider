@@ -2,18 +2,26 @@ package main
 
 import (
 	"flag"
+	"github.com/moozik/nfo-spider/spider/av/av_base"
+	"github.com/moozik/nfo-spider/spider/av/javbus"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/moozik/nfo-spider/define"
-	"github.com/moozik/nfo-spider/javbus"
 	"github.com/moozik/nfo-spider/utils"
 )
 
 func main() {
 	log.Println(utils.GetCurrentDirectory())
 	log.Println(utils.IsRelease())
+
+	cacheDir := path.Join(utils.GetCurrentDirectory(), string(os.PathSeparator), "cache")
+	if !utils.Exists(cacheDir) {
+		log.Println("mkdir cache")
+		os.Mkdir(cacheDir, 0755)
+	}
 	// filePtr, err := os.OpenFile(fmt.Sprintf("logs/log_%s.log", time.Now().Format("2006_01_02")), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -27,7 +35,8 @@ func main() {
 	flag.Parse()
 
 	if *avId != "" {
-		log.Println(utils.Encode(javbus.GetOneWithCache(*avId)))
+		avJavbus := &javbus.AvJavbus{}
+		log.Println(utils.Encode(av_base.GetOneWithCache(avJavbus, *avId)))
 	} else if *avDir != "" {
 		walkDir(*avDir, *avDir)
 	}
@@ -48,8 +57,9 @@ func walkDir(dirRoot, dirNow string) {
 			if len(avIdList) == 0 {
 				return nil
 			}
-			avData := javbus.GetOneWithCache(avIdList[0])
-			utils.XMLBuild(dirRoot, path, avData)
+			avJavbus := &javbus.AvJavbus{}
+			avData := av_base.GetOneWithCache(avJavbus, avIdList[0])
+			av_base.XMLBuild(dirRoot, path, avData)
 		}
 		return nil
 	})

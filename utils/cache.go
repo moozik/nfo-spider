@@ -25,7 +25,7 @@ func (c *Cache) FilePath(key string) string {
 	if !IsRelease() {
 		dir = `F:\github\nfo-spider`
 	}
-	return filepath.Join(dir, fmt.Sprintf(`\cache\%s_%s_%s`, c.SiteName, c.DataType, key))
+	return filepath.Join(dir, string(os.PathSeparator), "cache", string(os.PathSeparator), fmt.Sprintf(`%s_%s_%s`, c.SiteName, c.DataType, key))
 }
 
 func (c *Cache) Set(key string, data []byte) error {

@@ -1,14 +1,13 @@
 package javbus
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/moozik/nfo-spider/spider/av/av_base"
+	"github.com/moozik/nfo-spider/utils"
 	"log"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/moozik/nfo-spider/define"
-	"github.com/moozik/nfo-spider/utils"
 )
 
 const SITE_NAME = "javbus"
@@ -23,49 +22,46 @@ const (
 	SeriesWord      = "系列:"
 )
 
-func GetHost() string {
+type AvJavbus struct {
+	av_base.AvBase
+}
+
+func NewAvJavbus() *AvJavbus {
+	return &AvJavbus{}
+}
+func (a *AvJavbus) AppName() string {
+	return SITE_NAME
+}
+func (a *AvJavbus) Host() string {
 	return JAVBUS_HOST
 }
-
-func GetOneWithCache(avId string) *define.AvItem {
-	c := utils.NewCache(SITE_NAME, "nfo")
-	b := c.Get(avId)
-	var avItem define.AvItem
-	if b != nil {
-		_ = json.Unmarshal(b, &avItem)
-		log.Printf("av_id:%s,read cache\n", avId)
-		return &avItem
-	}
-	pAvItem := GetOne(avId)
-	b, _ = json.Marshal(pAvItem)
-	log.Printf("av_id:%s,save cache\n", avId)
-	c.Set(avId, b)
-	return pAvItem
+func (a *AvJavbus) Url(s string) string {
+	return utils.Url(a.Host(), s)
 }
 
-func GetOne(avId string) *define.AvItem {
+func (a *AvJavbus) GetOne(avId string) *av_base.AvItem {
 	avId = strings.ToUpper(avId)
-	link := GetHost() + "/" + avId
-	doc, err := docGet(link)
+	link := a.Host() + "/" + avId
+	doc, err := a.DocGet(link)
 	if err != nil {
 		log.Printf("docGet fail,err:" + err.Error())
 		return nil
 	}
 
-	ret := define.AvItem{
+	ret := av_base.AvItem{
 		Link:  link,
 		AvId:  avId,
 		Title: doc.Find("body > div.container > h3").First().Text(),
 		Genre: getGenre(doc),
-		Stars: getStars(doc),
+		Stars: a.getStars(doc),
 	}
 
 	bigImage := doc.Find("a.bigImage > img").First().AttrOr("src", "")
-	ret.Clearart = url(bigImage)
+	ret.Clearart = a.Url(bigImage)
 	if strings.Contains(bigImage, "/digital/video") {
-		ret.Poster = url(strings.Replace(bigImage, "pl.jpg", "ps.jpg", 1))
+		ret.Poster = a.Url(strings.Replace(bigImage, "pl.jpg", "ps.jpg", 1))
 	} else if strings.Contains(bigImage, "/pics/cover") {
-		ret.Poster = url(fmt.Sprintf("/pics/thumb/%s.jpg", bigImage[12:16]))
+		ret.Poster = a.Url(fmt.Sprintf("/pics/thumb/%s.jpg", bigImage[12:16]))
 	}
 
 	doc.Find("span.header").Each(func(i int, s *goquery.Selection) {
@@ -91,6 +87,17 @@ func GetOne(avId string) *define.AvItem {
 	return &ret
 }
 
+func (a *AvJavbus) getStars(doc *goquery.Document) []av_base.Stars {
+	var ret []av_base.Stars
+	doc.Find("div.star-box > li > a > img").Each(func(i int, s *goquery.Selection) {
+		ret = append(ret, av_base.Stars{
+			Name:  s.First().AttrOr("title", ""),
+			Image: a.Url(s.First().AttrOr("src", "")),
+		})
+	})
+	return ret
+}
+
 func parseData(target, keyword string) string {
 	return strings.TrimSpace(strings.Replace(target, keyword, "", 1))
 }
@@ -101,19 +108,4 @@ func getGenre(doc *goquery.Document) []string {
 		ret = append(ret, s.First().Text())
 	})
 	return ret
-}
-
-func getStars(doc *goquery.Document) []define.Stars {
-	var ret []define.Stars
-	doc.Find("div.star-box > li > a > img").Each(func(i int, s *goquery.Selection) {
-		ret = append(ret, define.Stars{
-			Name:  s.First().AttrOr("title", ""),
-			Image: url(s.First().AttrOr("src", "")),
-		})
-	})
-	return ret
-}
-
-func url(s string) string {
-	return utils.Url(GetHost(), s)
 }

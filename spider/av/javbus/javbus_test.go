@@ -2,11 +2,10 @@ package javbus
 
 import (
 	"fmt"
+	"github.com/moozik/nfo-spider/utils"
 	"path/filepath"
 	"regexp"
 	"testing"
-
-	"github.com/moozik/nfo-spider/utils"
 )
 
 func TestGetOne(t *testing.T) {
@@ -16,7 +15,9 @@ func TestGetOne(t *testing.T) {
 	// t.Log(utils.Encode(ret))
 
 	//站内图
-	ret = GetOne("JUQ-293")
+	a := NewAvJavbus()
+	fmt.Println(a.Host(), a.AppName())
+	ret = a.GetOneWithCache(a, "JUQ-293")
 	t.Log(utils.Encode(ret))
 }
 
