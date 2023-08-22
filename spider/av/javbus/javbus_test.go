@@ -2,23 +2,21 @@ package javbus
 
 import (
 	"fmt"
-	"github.com/moozik/nfo-spider/utils"
+	"log"
+	"net/url"
 	"path/filepath"
 	"regexp"
 	"testing"
 )
 
-func TestGetOne(t *testing.T) {
-	var ret any
-	//多女主 dmm主图
-	// ret = GetOne("KYMI-031")
-	// t.Log(utils.Encode(ret))
-
-	//站内图
-	a := NewAvJavbus()
-	fmt.Println(a.Host(), a.AppName())
-	ret = a.GetOneWithCache(a, "JUQ-293")
-	t.Log(utils.Encode(ret))
+func Test1(t *testing.T) {
+	parse, _ := url.Parse("https://www.busfan.cfd:8081/pics/cover/9xns_b.jpg")
+	log.Println("Path", parse.Path)
+	log.Println("Host", parse.Host)
+	log.Println("Scheme", parse.Scheme)
+	log.Println("RawQuery", parse.RawQuery)
+	log.Println("RawPath", parse.RawPath)
+	log.Println("Fragment", parse.Fragment)
 }
 
 func TestSplit(t *testing.T) {

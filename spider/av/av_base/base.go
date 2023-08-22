@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/moozik/nfo-spider/define"
-	"github.com/moozik/nfo-spider/utils"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/moozik/nfo-spider/define"
+	"github.com/moozik/nfo-spider/utils"
 )
 
 type avInter interface {
@@ -29,6 +29,9 @@ func (a *AvBase) DocGet(url string) (*goquery.Document, error) {
 	log.Printf("httpGet,url:%s\n", url)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
 	client := &http.Client{
 		Timeout: time.Second * 5,
 	}
@@ -44,18 +47,22 @@ func (a *AvBase) DocGet(url string) (*goquery.Document, error) {
 }
 
 func GetOneWithCache(s avInter, id string) *AvItem {
-	c := utils.NewCache(s.AppName(), define.CacheTypeAvItem)
+	c := utils.NewCache(s.AppName(), define.CacheTypeAvItem, "json")
 	b := c.Get(id)
 	var avItem AvItem
 	if b != nil {
 		_ = json.Unmarshal(b, &avItem)
 		log.Printf("id:%s,read cache\n", id)
+		avItem.BuildLink(s.Host())
 		return &avItem
 	}
 	pAvItem := s.GetOne(id)
-	b, _ = json.Marshal(pAvItem)
+	if pAvItem == nil {
+		return nil
+	}
 	log.Printf("id:%s,save cache\n", id)
-	c.Set(id, b)
+	_ = c.Set(id, utils.Encode(pAvItem))
+	pAvItem.BuildLink(s.Host())
 	return pAvItem
 }
 
@@ -72,8 +79,10 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 		return
 	}
 
-	filePath := path.Join(dirRoot, "images", "poster_"+a.AvId+".jpg")
-	utils.ImageDownload(filePath, a.Poster)
+	posterFilePath := path.Join(dirRoot, "images", "poster_"+a.AvId+".jpg")
+	utils.ImageDownload(posterFilePath, a.Poster)
+	clearartFilePath := path.Join(dirRoot, "images", "clearart_"+a.AvId+".jpg")
+	utils.ImageDownload(clearartFilePath, a.Clearart)
 
 	ret := define.NfoMovie{
 		Title:         a.Title,
@@ -85,12 +94,12 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 		Credits:       a.Series,
 		Genre:         a.Genre,
 		Art: define.Art{
-			Poster: filePath,
-			Fanart: filePath,
+			Poster: posterFilePath,
+			Fanart: clearartFilePath,
 		},
 		Fanart: []define.Fanart{
 			{
-				Thumb: filePath,
+				Thumb: clearartFilePath,
 			},
 		},
 		Actor: []define.Actor{},
@@ -112,11 +121,11 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 		return
 	}
 
-	filePath = path.Join(path.Dir(avPath), patternFileRet[1]+".nfo")
-	if utils.Exists(filePath) {
-		os.Remove(filePath)
+	posterFilePath = path.Join(path.Dir(avPath), patternFileRet[1]+".nfo")
+	if utils.Exists(posterFilePath) {
+		_ = os.Remove(posterFilePath)
 	}
-	err = ioutil.WriteFile(filePath, append([]byte(`<?xml version="1.0" encoding="utf-8" standalone="yes"?>`), xmlByte...), 0644)
+	err = os.WriteFile(posterFilePath, append([]byte(`<?xml version="1.0" encoding="utf-8" standalone="yes"?>`), xmlByte...), 0644)
 	if err != nil {
 		log.Fatal("nfo文件写入失败,", err)
 		return

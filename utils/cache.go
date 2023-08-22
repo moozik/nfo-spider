@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,12 +10,14 @@ import (
 type Cache struct {
 	SiteName string
 	DataType string
+	Tail     string
 }
 
-func NewCache(siteName, dataType string) *Cache {
+func NewCache(siteName, dataType, tail string) *Cache {
 	return &Cache{
 		SiteName: siteName,
 		DataType: dataType,
+		Tail:     tail,
 	}
 }
 
@@ -25,7 +26,7 @@ func (c *Cache) FilePath(key string) string {
 	if !IsRelease() {
 		dir = `F:\github\nfo-spider`
 	}
-	return filepath.Join(dir, string(os.PathSeparator), "cache", string(os.PathSeparator), fmt.Sprintf(`%s_%s_%s`, c.SiteName, c.DataType, key))
+	return filepath.Join(dir, string(os.PathSeparator), "cache", string(os.PathSeparator), fmt.Sprintf(`%s_%s_%s.%s`, c.SiteName, c.DataType, key, c.Tail))
 }
 
 func (c *Cache) Set(key string, data []byte) error {
@@ -64,6 +65,6 @@ func (c *Cache) Get(key string) []byte {
 	if !Exists(c.FilePath(key)) {
 		return nil
 	}
-	byteData, _ := ioutil.ReadFile(c.FilePath(key))
+	byteData, _ := os.ReadFile(c.FilePath(key))
 	return byteData
 }

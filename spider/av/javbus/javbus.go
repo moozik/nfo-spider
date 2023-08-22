@@ -3,7 +3,6 @@ package javbus
 import (
 	"fmt"
 	"github.com/moozik/nfo-spider/spider/av/av_base"
-	"github.com/moozik/nfo-spider/utils"
 	"log"
 	"strings"
 
@@ -11,7 +10,7 @@ import (
 )
 
 const SITE_NAME = "javbus"
-const JAVBUS_HOST = "https://www.cdnbus.lol"
+const JAVBUS_HOST = "www.busfan.cfd"
 
 const (
 	ReleaseDateWord = "發行日期:"
@@ -36,32 +35,45 @@ func (a *AvJavbus) Host() string {
 	return JAVBUS_HOST
 }
 func (a *AvJavbus) Url(s string) string {
-	return utils.Url(a.Host(), s)
+	if s == "" {
+		return ""
+	}
+	if s[:4] == "http" {
+		return s
+	}
+	if s[0] == '/' {
+		return fmt.Sprintf("https://%s%s", a.Host(), s)
+	}
+	return fmt.Sprintf("https://%s/%s", a.Host(), s)
 }
 
 func (a *AvJavbus) GetOne(avId string) *av_base.AvItem {
 	avId = strings.ToUpper(avId)
-	link := a.Host() + "/" + avId
-	doc, err := a.DocGet(link)
+	doc, err := a.DocGet(a.Url(avId))
 	if err != nil {
 		log.Printf("docGet fail,err:" + err.Error())
 		return nil
 	}
 
 	ret := av_base.AvItem{
-		Link:  link,
-		AvId:  avId,
-		Title: doc.Find("body > div.container > h3").First().Text(),
-		Genre: getGenre(doc),
-		Stars: a.getStars(doc),
+		Scheme: "https",
+		Link:   "/" + avId,
+		AvId:   avId,
+		Title:  doc.Find("body > div.container > h3").First().Text(),
+		Genre:  getGenre(doc),
+		Stars:  a.getStars(doc),
 	}
 
 	bigImage := doc.Find("a.bigImage > img").First().AttrOr("src", "")
-	ret.Clearart = a.Url(bigImage)
+
 	if strings.Contains(bigImage, "/digital/video") {
+		//完整路径
 		ret.Poster = a.Url(strings.Replace(bigImage, "pl.jpg", "ps.jpg", 1))
+		ret.Clearart = bigImage
 	} else if strings.Contains(bigImage, "/pics/cover") {
-		ret.Poster = a.Url(fmt.Sprintf("/pics/thumb/%s.jpg", bigImage[12:16]))
+		//部分路径
+		ret.Poster = fmt.Sprintf("/pics/thumb/%s.jpg", bigImage[12:16])
+		ret.Clearart = fmt.Sprintf("/pics/cover/%s_b.jpg", bigImage[12:16])
 	}
 
 	doc.Find("span.header").Each(func(i int, s *goquery.Selection) {
@@ -92,7 +104,7 @@ func (a *AvJavbus) getStars(doc *goquery.Document) []av_base.Stars {
 	doc.Find("div.star-box > li > a > img").Each(func(i int, s *goquery.Selection) {
 		ret = append(ret, av_base.Stars{
 			Name:  s.First().AttrOr("title", ""),
-			Image: a.Url(s.First().AttrOr("src", "")),
+			Image: s.First().AttrOr("src", ""),
 		})
 	})
 	return ret

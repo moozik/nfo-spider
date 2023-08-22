@@ -1,7 +1,12 @@
 package av_base
 
+import (
+	"fmt"
+)
+
 type AvItem struct {
-	Link string `json:"link"`
+	Scheme string `json:"scheme"`
+	Link   string `json:"link"`
 
 	AvId        string   `json:"av_id"`
 	Title       string   `json:"title"`
@@ -20,4 +25,25 @@ type AvItem struct {
 type Stars struct {
 	Name  string `json:"name"`
 	Image string `json:"image"`
+}
+
+func (a *AvItem) BuildLink(host string) {
+	a.Poster = a.Url(host, a.Poster)
+	a.Clearart = a.Url(host, a.Clearart)
+	for k, item := range a.Stars {
+		a.Stars[k].Image = a.Url(host, item.Image)
+	}
+}
+
+func (a *AvItem) Url(host, path string) string {
+	if path == "" {
+		return ""
+	}
+	if path[:4] == "http" {
+		return path
+	}
+	if path[0] == '/' {
+		return fmt.Sprintf("%s://%s%s", a.Scheme, host, path)
+	}
+	return fmt.Sprintf("%s://%s/%s", a.Scheme, host, path)
 }

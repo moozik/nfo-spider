@@ -20,7 +20,7 @@ func main() {
 	cacheDir := path.Join(utils.GetCurrentDirectory(), string(os.PathSeparator), "cache")
 	if !utils.Exists(cacheDir) {
 		log.Println("mkdir cache")
-		os.Mkdir(cacheDir, 0755)
+		_ = os.Mkdir(cacheDir, 0755)
 	}
 	// filePtr, err := os.OpenFile(fmt.Sprintf("logs/log_%s.log", time.Now().Format("2006_01_02")), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	// if err != nil {
@@ -35,8 +35,7 @@ func main() {
 	flag.Parse()
 
 	if *avId != "" {
-		avJavbus := &javbus.AvJavbus{}
-		log.Println(utils.Encode(av_base.GetOneWithCache(avJavbus, *avId)))
+		log.Println(utils.EncodeString(av_base.GetOneWithCache(javbus.NewAvJavbus(), *avId)))
 	} else if *avDir != "" {
 		walkDir(*avDir, *avDir)
 	}
@@ -57,8 +56,7 @@ func walkDir(dirRoot, dirNow string) {
 			if len(avIdList) == 0 {
 				return nil
 			}
-			avJavbus := &javbus.AvJavbus{}
-			avData := av_base.GetOneWithCache(avJavbus, avIdList[0])
+			avData := av_base.GetOneWithCache(javbus.NewAvJavbus(), avIdList[0])
 			av_base.XMLBuild(dirRoot, path, avData)
 		}
 		return nil
