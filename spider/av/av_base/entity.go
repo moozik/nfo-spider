@@ -19,7 +19,7 @@ type AvItem struct {
 	Genre       []string `json:"genre"`
 	Stars       []Stars  `json:"stars"`
 	Poster      string   `json:"poster"`   //竖着海报
-	Clearart    string   `json:"clearart"` //横着海报
+	ClearArt    string   `json:"clearart"` //横着海报
 }
 
 type Stars struct {
@@ -28,8 +28,12 @@ type Stars struct {
 }
 
 func (a *AvItem) BuildLink(host string) {
-	a.Poster = a.Url(host, a.Poster)
-	a.Clearart = a.Url(host, a.Clearart)
+	if a.Poster != "" && a.Poster[0] == '/' {
+		a.Poster = a.Url(host, a.Poster)
+	}
+	if a.ClearArt != "" && a.ClearArt[0] == '/' {
+		a.ClearArt = a.Url(host, a.ClearArt)
+	}
 	for k, item := range a.Stars {
 		a.Stars[k].Image = a.Url(host, item.Image)
 	}

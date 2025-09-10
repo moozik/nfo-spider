@@ -10,8 +10,8 @@ type Actor struct {
 }
 type Art struct {
 	Text   string `xml:",chardata"`
-	Poster string `xml:"poster"`
-	Fanart string `xml:"fanart"`
+	Poster string `xml:"poster"` //竖屏封面图
+	Fanart string `xml:"fanart"` //横屏封面图
 }
 type Fanart struct {
 	Text  string `xml:",chardata"`

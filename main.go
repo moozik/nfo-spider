@@ -32,10 +32,11 @@ func main() {
 
 	avId := flag.String("a", "", "avid")
 	avDir := flag.String("d", "", "影片目录")
+	debug := flag.Bool("debug", false, "debug")
 	flag.Parse()
 
 	if *avId != "" {
-		log.Println(utils.EncodeString(av_base.GetOneWithCache(javbus.NewAvJavbus(), *avId)))
+		log.Println(utils.EncodeString(av_base.GetOneWithCache(javbus.NewAvJavbus().SetDebug(*debug), *avId)))
 	} else if *avDir != "" {
 		walkDir(*avDir, *avDir)
 	}

@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"github.com/moozik/nfo-spider/utils/ai"
 	"log"
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -23,6 +25,7 @@ type avInter interface {
 
 type AvBase struct {
 	avInter
+	IsDebug bool //打印debug
 }
 
 func (a *AvBase) DocGet(url string) (*goquery.Document, error) {
@@ -32,6 +35,10 @@ func (a *AvBase) DocGet(url string) (*goquery.Document, error) {
 	if err != nil {
 		return nil, err
 	}
+	//设置cookie：PHPSESSID=7tmo4naqrpb01ah7nopts6dd80; existmag=mag
+	req.Header.Set("Cookie", "PHPSESSID=7tmo4naqrpb01ah7nopts6dd80; existmag=mag")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36")
+	req.Header.Set("Accept-Language", "zh-CN,zh-TW;q=0.9,zh-HK;q=0.8,zh;q=0.7")
 	client := &http.Client{
 		Timeout: time.Second * 5,
 	}
@@ -41,12 +48,14 @@ func (a *AvBase) DocGet(url string) (*goquery.Document, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("http status:%v", resp.Status)
 		return nil, errors.New("status:" + resp.Status)
 	}
 	return goquery.NewDocumentFromReader(resp.Body)
 }
 
 func GetOneWithCache(s avInter, id string) *AvItem {
+	id = strings.ToUpper(id)
 	c := utils.NewCache(s.AppName(), define.CacheTypeAvItem, "json")
 	b := c.Get(id)
 	var avItem AvItem
@@ -82,10 +91,11 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 	posterFilePath := path.Join(dirRoot, "images", "poster_"+a.AvId+".jpg")
 	utils.ImageDownload(posterFilePath, a.Poster)
 	clearartFilePath := path.Join(dirRoot, "images", "clearart_"+a.AvId+".jpg")
-	utils.ImageDownload(clearartFilePath, a.Clearart)
+	utils.ImageDownload(clearartFilePath, a.ClearArt)
 
+	title := strings.Replace(a.Title, a.AvId, "", 1)
 	ret := define.NfoMovie{
-		Title:         a.Title,
+		Title:         ai.Translate(title),
 		Originaltitle: a.Title,
 		Sorttitle:     a.AvId,
 		Premiered:     a.ReleaseDate,

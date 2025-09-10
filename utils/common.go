@@ -5,10 +5,34 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
+
+var client *http.Client
+
+func init() {
+	var transport *http.Transport
+	if GetEnv("PROXY") != "" {
+		proxy, err := url.Parse(GetEnv("PROXY"))
+		if err != nil {
+			log.Println("代理地址解析失败:", err)
+			return
+		}
+
+		transport = &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
+	}
+
+	client = &http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second,
+	}
+}
 
 func EncodeString(a any) string {
 	v, _ := json.Marshal(a)
@@ -52,28 +76,36 @@ func IsRelease() bool {
 }
 
 func ImageDownload(localPath, url string) {
-	log.Println("ImageDownload", localPath, url)
 	if Exists(localPath) {
 		return
 	}
 	if url == "" {
-		log.Println("url为空")
+		log.Println("ImageDownload url为空")
 		return
 	}
-	resp, err := http.Get(url)
+	log.Println("ImageDownload", localPath, url)
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Fatal("图片请求失败,", err)
+		return
+	}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Println("图片请求失败,", err)
 		return
 	}
 	defer resp.Body.Close()
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("图片读取失败,", err)
+		log.Println("图片读取失败,", err)
 		return
 	}
+
 	err = os.WriteFile(localPath, data, 0644)
 	if err != nil {
-		log.Fatal("图片下载失败,", err)
+		log.Println("图片下载失败,", err)
 		return
 	}
 }

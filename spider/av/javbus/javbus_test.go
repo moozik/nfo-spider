@@ -35,10 +35,16 @@ func TestRegexp(t *testing.T) {
 	avList := []string{
 		"abw-350ch.mp4",
 		"ABW-331-C.mp4",
+		"ABW-331c.mp4",
 		"435MFCS-041.mp4",
 		"FC2-PPV-3136593.mp4",
 	}
 	for _, avFile := range avList {
 		fmt.Println(avFile, c.FindStringSubmatch(avFile))
 	}
+}
+
+func TestGetOne(t *testing.T) {
+	NewAvJavbus().SetDebug(true).GetOne("NGHJ-025")
+	//NewAvJavbus().SetDebug(true).GetOne("USBA-084")
 }
