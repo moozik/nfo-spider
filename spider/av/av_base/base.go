@@ -93,9 +93,10 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 	clearartFilePath := path.Join(dirRoot, "images", "clearart_"+a.AvId+".jpg")
 	utils.ImageDownload(clearartFilePath, a.ClearArt)
 
-	title := strings.Replace(a.Title, a.AvId, "", 1)
+	titleTransLate := ai.Translate(strings.Replace(a.Title, a.AvId, "", 1))
 	ret := define.NfoMovie{
-		Title:         ai.Translate(title),
+		Title:         titleTransLate,
+		Polt:          titleTransLate,
 		Originaltitle: a.Title,
 		Sorttitle:     a.AvId,
 		Premiered:     a.ReleaseDate,
@@ -116,12 +117,12 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 	}
 
 	for _, act := range a.Stars {
-		imagePath := path.Join(dirRoot, "images", "actor_"+act.Name+".jpg")
-		utils.ImageDownload(imagePath, act.Image)
+		//imagePath := path.Join(dirRoot, "images", "actor_"+act.Name+".jpg")
+		//utils.ImageDownload(imagePath, act.Image)
 		ret.Actor = append(ret.Actor, define.Actor{
-			Name:  act.Name,
-			Type:  "actor",
-			Thumb: imagePath,
+			Name: act.Name,
+			Type: "actor",
+			//Thumb: imagePath,
 		})
 	}
 

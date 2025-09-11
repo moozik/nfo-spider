@@ -22,6 +22,7 @@ type NfoMovie struct {
 	XMLName       xml.Name `xml:"movie"`
 	Text          string   `xml:",chardata"`
 	Title         string   `xml:"title"`
+	Polt          string   `xml:"polt"`
 	Originaltitle string   `xml:"originaltitle"`
 	Year          string   `xml:"year"`
 	Sorttitle     string   `xml:"sorttitle"`
