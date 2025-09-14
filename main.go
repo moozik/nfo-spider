@@ -30,35 +30,36 @@ func main() {
 
 	log.Printf("args:%+v\n", os.Args)
 
-	avId := flag.String("a", "", "avid")
-	avDir := flag.String("d", "", "影片目录")
+	avIdFlag := flag.String("a", "", "avid")
+	avDirFlag := flag.String("d", "", "影片读取目录")
+	writeDirFlag := flag.String("r", "", "文件写入路径")
+	nasDirFlag := flag.String("n", "", "文件内路径（nas内部路径）")
 	debug := flag.Bool("debug", false, "debug")
 	flag.Parse()
-
-	if *avId != "" {
-		log.Println(utils.EncodeString(av_base.GetOneWithCache(javbus.NewAvJavbus().SetDebug(*debug), *avId)))
-	} else if *avDir != "" {
-		walkDir(*avDir, *avDir)
+	if *avIdFlag != "" {
+		log.Println(utils.EncodeString(av_base.GetOneWithCache(javbus.NewAvJavbus().SetDebug(*debug), *avIdFlag)))
+	} else if *avDirFlag != "" && *writeDirFlag != "" && *nasDirFlag != "" {
+		walkDir(*nasDirFlag, *writeDirFlag, *avDirFlag, *avDirFlag)
 	}
 }
 
-func walkDir(dirRoot, dirNow string) {
+func walkDir(nasDir, writeDir, dirRoot, dirNow string) {
 	err := filepath.Walk(dirNow, func(path string, info os.FileInfo, err error) error {
 		log.Printf("path:%s", path)
-		if info.IsDir() {
-			if dirNow == path {
-				return nil
-			}
-			walkDir(dirRoot, path)
-			return nil
-		}
+		//if info.IsDir() {
+		//	if dirNow == path {
+		//		return nil
+		//	}
+		//	walkDir(writeDir, dirRoot, path)
+		//	return nil
+		//}
 		if define.PattrenAvFile.MatchString(info.Name()) {
 			avIdList := define.PattrenAvName.FindStringSubmatch(info.Name())
 			if len(avIdList) == 0 {
 				return nil
 			}
 			avData := av_base.GetOneWithCache(javbus.NewAvJavbus(), avIdList[0])
-			av_base.XMLBuild(dirRoot, path, avData)
+			av_base.XMLBuild(nasDir, writeDir, dirRoot, path, avData)
 		}
 		return nil
 	})

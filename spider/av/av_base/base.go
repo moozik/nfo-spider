@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -75,10 +76,10 @@ func GetOneWithCache(s avInter, id string) *AvItem {
 	return pAvItem
 }
 
-func XMLBuild(dirRoot, avPath string, a *AvItem) {
-	log.Printf("dirRoot:%s,avPath:%s", dirRoot, avPath)
+func XMLBuild(nasDir, writeDir, realDir, avPath string, a *AvItem) {
+	log.Printf("nasDir:%s,writeDir:%s,realDir:%s,avPath:%s", nasDir, writeDir, realDir, avPath)
 	if a == nil {
-		log.Fatal("nil input *define.AvItem")
+		log.Println("nil input *define.AvItem")
 		return
 	}
 	avFileName := path.Base(avPath)
@@ -88,11 +89,13 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 		return
 	}
 
-	posterFilePath := path.Join(dirRoot, "images", "poster_"+a.AvId+".jpg")
+	posterFilePath := path.Join(writeDir, "images", "poster_"+a.AvId+".jpg")
 	utils.ImageDownload(posterFilePath, a.Poster)
-	clearartFilePath := path.Join(dirRoot, "images", "clearart_"+a.AvId+".jpg")
+	clearartFilePath := path.Join(writeDir, "images", "clearart_"+a.AvId+".jpg")
 	utils.ImageDownload(clearartFilePath, a.ClearArt)
 
+	nasDirPosterFilePath := path.Join(nasDir, "images", "poster_"+a.AvId+".jpg")
+	nasDirClearartFilePath := path.Join(nasDir, "images", "clearart_"+a.AvId+".jpg")
 	titleTransLate := ai.Translate(strings.Replace(a.Title, a.AvId, "", 1))
 	ret := define.NfoMovie{
 		Title:         titleTransLate,
@@ -105,12 +108,12 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 		Credits:       a.Series,
 		Genre:         a.Genre,
 		Art: define.Art{
-			Poster: posterFilePath,
-			Fanart: clearartFilePath,
+			Poster: nasDirPosterFilePath,
+			Fanart: nasDirClearartFilePath,
 		},
 		Fanart: []define.Fanart{
 			{
-				Thumb: clearartFilePath,
+				Thumb: nasDirClearartFilePath,
 			},
 		},
 		Actor: []define.Actor{},
@@ -132,13 +135,16 @@ func XMLBuild(dirRoot, avPath string, a *AvItem) {
 		return
 	}
 
-	posterFilePath = path.Join(path.Dir(avPath), patternFileRet[1]+".nfo")
-	if utils.Exists(posterFilePath) {
-		_ = os.Remove(posterFilePath)
-	}
-	err = os.WriteFile(posterFilePath, append([]byte(`<?xml version="1.0" encoding="utf-8" standalone="yes"?>`), xmlByte...), 0644)
-	if err != nil {
-		log.Fatal("nfo文件写入失败,", err)
-		return
+	base := filepath.Base(avFileName)
+	avFileNameHead := strings.TrimSuffix(base, filepath.Ext(base))
+	posterFilePath = path.Join(writeDir, avFileNameHead+".nfo")
+	if !utils.Exists(posterFilePath) {
+		err = os.WriteFile(posterFilePath, append([]byte(`<?xml version="1.0" encoding="utf-8" standalone="yes"?>`), xmlByte...), 0644)
+		if err != nil {
+			log.Fatal("nfo文件写入失败,", err)
+			return
+		}
+	} else {
+		log.Println("路径已存在", posterFilePath)
 	}
 }
