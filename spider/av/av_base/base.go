@@ -98,7 +98,7 @@ func XMLBuild(nasDir, writeDir, realDir, avPath string, a *AvItem) {
 	nasDirClearartFilePath := path.Join(nasDir, "images", "clearart_"+a.AvId+".jpg")
 	titleTransLate := ai.Translate(strings.Replace(a.Title, a.AvId, "", 1))
 	ret := define.NfoMovie{
-		Title:         titleTransLate,
+		Title:         a.AvId + " " + titleTransLate,
 		Polt:          titleTransLate,
 		Originaltitle: a.Title,
 		Sorttitle:     a.AvId,

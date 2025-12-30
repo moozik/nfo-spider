@@ -2,6 +2,7 @@
 .idea/
 cache
 logs
+tmp
 *.log
 *.zip
 *.exe
